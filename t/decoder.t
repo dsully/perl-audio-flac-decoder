@@ -2,7 +2,7 @@
 
 use Test;
 
-BEGIN { plan tests => 20 };
+BEGIN { plan tests => 15 };
 
 use Audio::FLAC::Decoder;
 use Fcntl qw(:seek);
@@ -31,13 +31,13 @@ ok($flac->raw_tell(), 32768);
 # seek 5 seconds in.
 # Windows seems to be off by 1 byte. Why?
 if ($^O !~ /win32/i) {
-	ok($flac->time_seek(4), 437488);
+	ok($flac->time_seek(5), 437488);
 
 	# XXX - should check time_tell
 	ok($flac->raw_tell(), 437488);
 }
 
 # test opening from a glob
-ok(open FH, "test.flac" or die $!);
+ok(open FH, "t/test.flac" or die $!);
 ok($flac = Audio::FLAC::Decoder->open(\*FH));
 ok(close(FH));

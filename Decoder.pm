@@ -3,7 +3,7 @@ package Audio::FLAC::Decoder;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.2';
+$VERSION = '0.3';
 
 BOOT_XS: {
         # If I inherit DynaLoader then I inherit AutoLoader
@@ -105,7 +105,7 @@ libFLAC
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004, Dan Sully.  All Rights Reserved.
+Copyright (c) 2004-2008, Dan Sully.  All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -114,6 +114,6 @@ your option) any later version.
 
 =head1 SEE ALSO
 
-L<Audio::FLAC>
+L<Audio::FLAC::Header>
 
 =cut

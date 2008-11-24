@@ -49,32 +49,32 @@
 #define my_hv_fetch(a,b)     hv_fetch(a,b,strlen(b),0)
 
 /* Create some generic (and shorter) names for these types. */
-typedef FLAC__SeekableStreamDecoder decoder_t;
-typedef FLAC__SeekableStreamDecoderReadStatus read_status_t;
+typedef FLAC__StreamDecoder decoder_t;
+typedef FLAC__StreamDecoderReadStatus read_status_t;
 
-#define FLACdecoder_new()                       FLAC__seekable_stream_decoder_new()
-#define FLACdecoder_init(x)                     FLAC__seekable_stream_decoder_init(x)
-#define FLACdecoder_process_metadata(x)         FLAC__seekable_stream_decoder_process_until_end_of_metadata(x)
-#define FLACdecoder_process_single(x)           FLAC__seekable_stream_decoder_process_single(x)
-#define FLACdecoder_finish(x)                   FLAC__seekable_stream_decoder_finish(x)
-#define FLACdecoder_delete(x)                   FLAC__seekable_stream_decoder_delete(x)
-#define FLACdecoder_set_read_callback(x, y)     FLAC__seekable_stream_decoder_set_read_callback(x, y)
-#define FLACdecoder_set_write_callback(x, y)    FLAC__seekable_stream_decoder_set_write_callback(x, y)
-#define FLACdecoder_set_metadata_callback(x, y) FLAC__seekable_stream_decoder_set_metadata_callback(x, y)
-#define FLACdecoder_set_error_callback(x, y)    FLAC__seekable_stream_decoder_set_error_callback(x, y)
-#define FLACdecoder_set_client_data(x, y)       FLAC__seekable_stream_decoder_set_client_data(x, y)
-#define FLACdecoder_set_seek_callback(x, y)     FLAC__seekable_stream_decoder_set_seek_callback(x, y)
-#define FLACdecoder_set_tell_callback(x, y)     FLAC__seekable_stream_decoder_set_tell_callback(x, y)
-#define FLACdecoder_set_length_callback(x, y)   FLAC__seekable_stream_decoder_set_length_callback(x, y)
-#define FLACdecoder_set_eof_callback(x, y)      FLAC__seekable_stream_decoder_set_eof_callback(x, y)
-#define FLACdecoder_seek_absolute(x, y)         FLAC__seekable_stream_decoder_seek_absolute(x, y)
+#define FLACdecoder_new()                       FLAC__stream_decoder_new()
+#define FLACdecoder_init(a,b,c,d,e,f,g,h,i,j)   FLAC__stream_decoder_init_stream(a,b,c,d,e,f,g,h,i,j)
+#define FLACdecoder_process_metadata(x)         FLAC__stream_decoder_process_until_end_of_metadata(x)
+#define FLACdecoder_process_single(x)           FLAC__stream_decoder_process_single(x)
+#define FLACdecoder_finish(x)                   FLAC__stream_decoder_finish(x)
+#define FLACdecoder_delete(x)                   FLAC__stream_decoder_delete(x)
+#define FLACdecoder_set_read_callback(x, y)     FLAC__stream_decoder_set_read_callback(x, y)
+#define FLACdecoder_set_write_callback(x, y)    FLAC__stream_decoder_set_write_callback(x, y)
+#define FLACdecoder_set_metadata_callback(x, y) FLAC__stream_decoder_set_metadata_callback(x, y)
+#define FLACdecoder_set_error_callback(x, y)    FLAC__stream_decoder_set_error_callback(x, y)
+#define FLACdecoder_set_client_data(x, y)       FLAC__stream_decoder_set_client_data(x, y)
+#define FLACdecoder_set_seek_callback(x, y)     FLAC__stream_decoder_set_seek_callback(x, y)
+#define FLACdecoder_set_tell_callback(x, y)     FLAC__stream_decoder_set_tell_callback(x, y)
+#define FLACdecoder_set_length_callback(x, y)   FLAC__stream_decoder_set_length_callback(x, y)
+#define FLACdecoder_set_eof_callback(x, y)      FLAC__stream_decoder_set_eof_callback(x, y)
+#define FLACdecoder_seek_absolute(x, y)         FLAC__stream_decoder_seek_absolute(x, y)
 
-#define FLACdecoder_get_state(x)                FLAC__seekable_stream_decoder_get_state(x)
-#define FLACdecoder_get_channels(x)             FLAC__seekable_stream_decoder_get_channels(x)
-#define FLACdecoder_get_blocksize(x)		FLAC__seekable_stream_decoder_get_blocksize(x)
-#define FLACdecoder_get_sample_rate(x)		FLAC__seekable_stream_decoder_get_sample_rate(x)
-#define FLACdecoder_get_bits_per_sample(x)	FLAC__seekable_stream_decoder_get_bits_per_sample(x)
-#define FLACdecoder_get_decode_position(x, y)   FLAC__seekable_stream_decoder_get_decode_position(x, y)
+#define FLACdecoder_get_state(x)                FLAC__stream_decoder_get_state(x)
+#define FLACdecoder_get_channels(x)             FLAC__stream_decoder_get_channels(x)
+#define FLACdecoder_get_blocksize(x)		FLAC__stream_decoder_get_blocksize(x)
+#define FLACdecoder_get_sample_rate(x)		FLAC__stream_decoder_get_sample_rate(x)
+#define FLACdecoder_get_bits_per_sample(x)	FLAC__stream_decoder_get_bits_per_sample(x)
+#define FLACdecoder_get_decode_position(x, y)   FLAC__stream_decoder_get_decode_position(x, y)
 
 #define SAMPLES_PER_WRITE 512
 
@@ -182,7 +182,7 @@ static void error_callback(
 	warn("FLAC decoder error_callback: %s\n", status);
 }
 
-static FLAC__SeekableStreamDecoderSeekStatus seek_callback(
+static FLAC__StreamDecoderSeekStatus seek_callback(
 	const decoder_t *decoder,
 	FLAC__uint64 absolute_byte_offset, void *client_data) {
 
@@ -190,17 +190,17 @@ static FLAC__SeekableStreamDecoderSeekStatus seek_callback(
 
 	/* can't seek on a socket */
 	if (datasource->is_streaming) {
-		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_ERROR;
+		return FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 	}
 
 	if (PerlIO_seek(datasource->stream, absolute_byte_offset, SEEK_SET) >= 0) {
-		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK;
+		return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
 	}
 
-	return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_ERROR;
+	return FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 }
 
-static FLAC__SeekableStreamDecoderTellStatus tell_callback(
+static FLAC__StreamDecoderTellStatus tell_callback(
 	const decoder_t *decoder,
 	FLAC__uint64 *absolute_byte_offset, void *client_data) {
 
@@ -209,20 +209,20 @@ static FLAC__SeekableStreamDecoderTellStatus tell_callback(
 	
 	/* can't tell on a socket */
 	if (datasource->is_streaming) {
-		return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_ERROR;
+		return FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
 	}
 
 	pos = PerlIO_tell(datasource->stream);
 
 	if (pos < 0) {
-		return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_ERROR;
+		return FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
 	}
 
 	*absolute_byte_offset = pos;
-	return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK;
+	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
 }
 
-static FLAC__SeekableStreamDecoderLengthStatus length_callback(
+static FLAC__StreamDecoderLengthStatus length_callback(
 	const decoder_t *decoder,
 	FLAC__uint64 *stream_length, void *client_data) {
 
@@ -230,11 +230,11 @@ static FLAC__SeekableStreamDecoderLengthStatus length_callback(
 
 	/* can't find the total length of a socket */
 	if (datasource->is_streaming) {
-		return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_ERROR;
+		return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
 	}
 
 	*stream_length = datasource->stream_length;
-	return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK;
+	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
 
 static FLAC__bool eof_callback(
@@ -259,7 +259,7 @@ static FLAC__bool eof_callback(
 
 static read_status_t read_callback(
 	const decoder_t *decoder,
-	FLAC__byte buffer[], unsigned *bytes, void *client_data) {
+	FLAC__byte buffer[], size_t *bytes, void *client_data) {
 
 	flac_datasource *datasource = (flac_datasource *)client_data;
 
@@ -267,11 +267,12 @@ static read_status_t read_callback(
 
 	datasource->buffer_size = *bytes;
 
-	if (*bytes <= 0) {
-		return FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_ERROR;
-	}
+	if (*bytes == 0)
+		return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+	if (*bytes < 0)
+		return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 
-	return FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_OK;
+	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 }
 
 static FLAC__StreamDecoderWriteStatus write_callback(
@@ -369,16 +370,6 @@ open(class, path)
 		XSRETURN_UNDEF;
 	}
 
-	FLACdecoder_set_read_callback(datasource->decoder, read_callback);
-	FLACdecoder_set_write_callback(datasource->decoder, write_callback);
-	FLACdecoder_set_metadata_callback(datasource->decoder, meta_callback);
-	FLACdecoder_set_error_callback(datasource->decoder, error_callback);
-	FLACdecoder_set_client_data(datasource->decoder, (void*)datasource);
-	FLACdecoder_set_seek_callback(datasource->decoder, seek_callback);
-	FLACdecoder_set_tell_callback(datasource->decoder, tell_callback);
-	FLACdecoder_set_length_callback(datasource->decoder, length_callback);
-	FLACdecoder_set_eof_callback(datasource->decoder, eof_callback);
-
 	if (!datasource->is_streaming) {
 
 		pos = PerlIO_tell(datasource->stream);
@@ -400,7 +391,16 @@ open(class, path)
 		}
 	}
 
-	if (FLACdecoder_init(datasource->decoder) != FLAC__SEEKABLE_STREAM_DECODER_OK) {
+	if (FLACdecoder_init(datasource->decoder,
+	                     read_callback,
+	                     seek_callback,
+	                     tell_callback,
+	                     length_callback,
+	                     eof_callback,
+	                     write_callback,
+	                     meta_callback,
+	                     error_callback,
+	                     datasource) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
 
 		warn("Failed on initializing the decoder: [%d]\n", FLACdecoder_get_state(datasource->decoder));
 
@@ -459,7 +459,7 @@ sysread(obj, buffer, nbytes = 1024)
 
 		unsigned s = datasource->wide_samples_in_reservoir;
 
-		if (FLACdecoder_get_state(datasource->decoder) == FLAC__SEEKABLE_STREAM_DECODER_END_OF_STREAM ) {
+		if (FLACdecoder_get_state(datasource->decoder) == FLAC__STREAM_DECODER_END_OF_STREAM ) {
 			break;
 
 		} else if (!FLACdecoder_process_single(datasource->decoder)) {
@@ -595,7 +595,7 @@ raw_seek (obj, pos, whence)
 		XSRETURN_UNDEF;
 	}
 
-	if (!FLAC__seekable_stream_decoder_reset(datasource->decoder)) {
+	if (!FLAC__stream_decoder_reset(datasource->decoder)) {
 		XSRETURN_UNDEF;
 	}
 
