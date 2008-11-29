@@ -452,8 +452,7 @@ sysread(obj, buffer, nbytes = 1024)
 	HV *self = (HV *) SvRV(obj);
 	flac_datasource *datasource = (flac_datasource *) SvIV(*(my_hv_fetch(self, "DATASOURCE")));
 
-	if (!datasource) XSRETURN_UNDEF;
-	if (!datasource->decoder) XSRETURN_UNDEF;
+	if (!datasource || !datasource->decoder) XSRETURN_UNDEF;
 
 	while (datasource->wide_samples_in_reservoir < SAMPLES_PER_WRITE) {
 
@@ -461,9 +460,9 @@ sysread(obj, buffer, nbytes = 1024)
 
 		if (FLACdecoder_get_state(datasource->decoder) == FLAC__STREAM_DECODER_END_OF_STREAM ) {
 			break;
+		}
 
-		} else if (!FLACdecoder_process_single(datasource->decoder)) {
-
+		if (!FLACdecoder_process_single(datasource->decoder)) {
 			warn("Audio::FLAC::Decoder - read error while processing frame.\n");
 			break;
 		}
@@ -479,39 +478,36 @@ sysread(obj, buffer, nbytes = 1024)
 	while (nbytes > 0) {
 
 		if (datasource->wide_samples_in_reservoir <= 0) {
-
 			break;
-
-		} else {
-
-			const unsigned channels = FLACdecoder_get_channels(datasource->decoder);
-			const unsigned bps = FLACdecoder_get_bits_per_sample(datasource->decoder);
-			const unsigned n = min(datasource->wide_samples_in_reservoir, SAMPLES_PER_WRITE);
-			const unsigned delta = n * channels;
-			unsigned i;
-
-			int bytes = (int)pack_pcm_signed_little_endian(
-				datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
-			);
-
-			for (i = delta; i < datasource->wide_samples_in_reservoir * channels; i++) {
-				datasource->reservoir[i-delta] = datasource->reservoir[i];
-			}
-
-			datasource->wide_samples_in_reservoir -= n;
-
-			readBuffer        = datasource->sample_buffer;
-
-			total_bytes_read += bytes;
-			readBuffer       += bytes;
-			nbytes           -= bytes;
-
-			datasource->decode_position_last = 
-				datasource->decode_position_frame - 
-				datasource->wide_samples_in_reservoir *
-				(datasource->decode_position_frame - datasource->decode_position_frame_last) /
-				blocksize;
 		}
+
+		const unsigned channels = FLACdecoder_get_channels(datasource->decoder);
+		const unsigned bps = FLACdecoder_get_bits_per_sample(datasource->decoder);
+		const unsigned n = min(datasource->wide_samples_in_reservoir, SAMPLES_PER_WRITE);
+		const unsigned delta = n * channels;
+		unsigned i;
+
+		int bytes = (int)pack_pcm_signed_little_endian(
+			datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
+		);
+
+		for (i = delta; i < datasource->wide_samples_in_reservoir * channels; i++) {
+			datasource->reservoir[i-delta] = datasource->reservoir[i];
+		}
+
+		datasource->wide_samples_in_reservoir -= n;
+
+		readBuffer        = datasource->sample_buffer;
+
+		total_bytes_read += bytes;
+		readBuffer       += bytes;
+		nbytes           -= bytes;
+
+		datasource->decode_position_last = 
+			datasource->decode_position_frame - 
+			datasource->wide_samples_in_reservoir *
+			(datasource->decode_position_frame - datasource->decode_position_frame_last) /
+			blocksize;
 	}
 
 	/* copy the buffer into our passed SV* */
