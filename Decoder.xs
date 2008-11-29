@@ -503,11 +503,13 @@ sysread(obj, buffer, nbytes = 1024)
 		readBuffer       += bytes;
 		nbytes           -= bytes;
 
-		datasource->decode_position_last = 
-			datasource->decode_position_frame - 
-			datasource->wide_samples_in_reservoir *
-			(datasource->decode_position_frame - datasource->decode_position_frame_last) /
-			blocksize;
+		if (blocksize) {
+			datasource->decode_position_last = 
+				datasource->decode_position_frame - 
+				datasource->wide_samples_in_reservoir *
+				(datasource->decode_position_frame - datasource->decode_position_frame_last) /
+				blocksize;
+		}
 	}
 
 	/* copy the buffer into our passed SV* */
@@ -647,7 +649,7 @@ sample_seek (obj, sample)
 FLAC__uint64
 time_seek (obj, seconds)
 	SV* obj;
-	IV  seconds;
+	NV  seconds;
 
 	CODE:
 	{
@@ -655,8 +657,7 @@ time_seek (obj, seconds)
 	HV *self = (HV *) SvRV(obj);
 	flac_datasource *datasource = (flac_datasource *) SvIV(*(my_hv_fetch(self, "DATASOURCE")));
 
-	const double distance  = (double)seconds * 1000.0 / (double)datasource->length_in_msec;
-	unsigned target_sample = (unsigned)(distance * (double)datasource->total_samples);
+	unsigned target_sample = Perl_floor(seconds * datasource->sample_rate);
 
 	if (FLACdecoder_seek_absolute(datasource->decoder, (FLAC__uint64)target_sample)) {
 

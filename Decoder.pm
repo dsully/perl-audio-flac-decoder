@@ -65,6 +65,7 @@ the object is collected by the garbage handler. Returns C<undef> on failure.
 Reads PCM data from the FLAC stream into C<$buffer>.  Returns the
 number of bytes read, 0 when it reaches the end of the stream, or a
 value less than 0 on error.  The optional size can specify how many bytes to read.
+The data returned is in signed, little endian format.
 
 =head2 C<raw_seek ($pos)>
 
