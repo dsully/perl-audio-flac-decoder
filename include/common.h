@@ -1,4 +1,4 @@
-/* 
+/*
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -23,12 +23,6 @@
 #undef max
 #endif
 #define max(a,b) ((a)>(b)?(a):(b))
-
-#ifdef WORDS_BIGENDIAN
-#define host_is_big_endian() TRUE
-#else
-#define host_is_big_endian() FALSE
-#endif
 
 #if defined _MSC_VER
 #define FLAC__INLINE __inline

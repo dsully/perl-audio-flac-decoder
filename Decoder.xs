@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * Chunks of this code have been borrowed and influenced 
+ * Chunks of this code have been borrowed and influenced
  * by flac/decode.c and the flac XMMS plugin.
  *
  */
@@ -37,7 +37,6 @@
 
 #include <FLAC/all.h>
 #include "include/common.h"
-#include "include/dither.h"
 #include "include/replaygain_synthesis.h"
 
 #ifdef _MSC_VER
@@ -282,7 +281,7 @@ static FLAC__StreamDecoderWriteStatus write_callback(
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
 
-    for (sample = datasource->wide_samples_in_reservoir * channels, 
+    for (sample = datasource->wide_samples_in_reservoir * channels,
         wide_sample = 0; wide_sample < wide_samples; wide_sample++) {
 
         for (channel = 0; channel < channels; channel++, sample++) {
@@ -295,7 +294,7 @@ static FLAC__StreamDecoderWriteStatus write_callback(
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-size_t pack_pcm_signed_big_endian(FLAC__byte *data, FLAC__int32 *input, 
+size_t pack_pcm_signed_big_endian(FLAC__byte *data, FLAC__int32 *input,
     unsigned wide_samples, unsigned channels, unsigned source_bps, unsigned target_bps) {
 
     FLAC__int32 sample;
@@ -309,7 +308,7 @@ size_t pack_pcm_signed_big_endian(FLAC__byte *data, FLAC__int32 *input,
     FLAC__ASSERT((source_bps & 7) == 0);
     FLAC__ASSERT((target_bps & 7) == 0);
 
-    samples = wide_samples;
+    samples = wide_samples * channels;
 
     while (samples--) {
 
@@ -336,7 +335,7 @@ size_t pack_pcm_signed_big_endian(FLAC__byte *data, FLAC__int32 *input,
     return wide_samples * channels * bytes_per_sample;
 }
 
-size_t pack_pcm_signed_little_endian(FLAC__byte *data, FLAC__int32 *input, 
+size_t pack_pcm_signed_little_endian(FLAC__byte *data, FLAC__int32 *input,
     unsigned wide_samples, unsigned channels, unsigned source_bps, unsigned target_bps) {
 
     FLAC__int32 sample;
@@ -353,7 +352,7 @@ size_t pack_pcm_signed_little_endian(FLAC__byte *data, FLAC__int32 *input,
     /* the input is already organized into wide samples; all we need to do
      * is write the samples at the target bit-width.
      */
-    samples = wide_samples;
+    samples = wide_samples * channels;
 
     while (samples--) {
 
@@ -584,8 +583,8 @@ sysread(obj, buffer, nbytes = 1024)
         nbytes           -= bytes;
 
         if (blocksize) {
-            datasource->decode_position_last = 
-                datasource->decode_position_frame - 
+            datasource->decode_position_last =
+                datasource->decode_position_frame -
                 datasource->wide_samples_in_reservoir *
                 (datasource->decode_position_frame - datasource->decode_position_frame_last) /
                 blocksize;
@@ -774,7 +773,7 @@ time_tell (obj)
 
     } else {
 
-        /* time_position = metadata->data.stream_info.total_samples * 10 / 
+        /* time_position = metadata->data.stream_info.total_samples * 10 /
             (metadata->data.stream_info.sample_rate / 100);
         */
     }

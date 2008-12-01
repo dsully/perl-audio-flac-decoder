@@ -2,7 +2,7 @@
 
 use Test;
 
-BEGIN { plan tests => 19 };
+BEGIN { plan tests => 24 };
 
 use Audio::FLAC::Decoder;
 use Fcntl qw(:seek);
@@ -17,11 +17,16 @@ ok($flac->channels == 2);
 ok($flac->sample_rate == 44100);
 
 # Test the actual data.
-my @samples = unpack("v*", $buffer);                                                                                                                       
-ok($samples[0] == 0x2b7);                                                                                                                                  
-ok($samples[1] == 0x377);                                                                                                                                  
-ok($samples[2] == 0x26d);                                                                                                                                  
+ok(length($buffer) == 2048);
+my @samples = unpack("s*", $buffer);
+ok($samples[0] == 0x2b7);
+ok($samples[1] == 0x377);
+ok($samples[2] == 0x26d);
 ok($samples[3] == 0x46f);
+ok($samples[1020] == 0x134);
+ok($samples[1021] == 0x2bc);
+ok($samples[1022] == 0x169);
+ok($samples[1023] == 0x399);
 
 #ok($flac->raw_total);
 #ok($flac->pcm_total);
