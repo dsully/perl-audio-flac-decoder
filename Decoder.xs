@@ -52,21 +52,14 @@
 typedef FLAC__StreamDecoder decoder_t;
 typedef FLAC__StreamDecoderReadStatus read_status_t;
 
+static FLAC__bool is_big_endian_host;
+
 #define FLACdecoder_new()                       FLAC__stream_decoder_new()
 #define FLACdecoder_init(a,b,c,d,e,f,g,h,i,j)   FLAC__stream_decoder_init_stream(a,b,c,d,e,f,g,h,i,j)
 #define FLACdecoder_process_metadata(x)         FLAC__stream_decoder_process_until_end_of_metadata(x)
 #define FLACdecoder_process_single(x)           FLAC__stream_decoder_process_single(x)
 #define FLACdecoder_finish(x)                   FLAC__stream_decoder_finish(x)
 #define FLACdecoder_delete(x)                   FLAC__stream_decoder_delete(x)
-#define FLACdecoder_set_read_callback(x, y)     FLAC__stream_decoder_set_read_callback(x, y)
-#define FLACdecoder_set_write_callback(x, y)    FLAC__stream_decoder_set_write_callback(x, y)
-#define FLACdecoder_set_metadata_callback(x, y) FLAC__stream_decoder_set_metadata_callback(x, y)
-#define FLACdecoder_set_error_callback(x, y)    FLAC__stream_decoder_set_error_callback(x, y)
-#define FLACdecoder_set_client_data(x, y)       FLAC__stream_decoder_set_client_data(x, y)
-#define FLACdecoder_set_seek_callback(x, y)     FLAC__stream_decoder_set_seek_callback(x, y)
-#define FLACdecoder_set_tell_callback(x, y)     FLAC__stream_decoder_set_tell_callback(x, y)
-#define FLACdecoder_set_length_callback(x, y)   FLAC__stream_decoder_set_length_callback(x, y)
-#define FLACdecoder_set_eof_callback(x, y)      FLAC__stream_decoder_set_eof_callback(x, y)
 #define FLACdecoder_seek_absolute(x, y)         FLAC__stream_decoder_seek_absolute(x, y)
 
 #define FLACdecoder_get_state(x)                FLAC__stream_decoder_get_state(x)
@@ -144,12 +137,12 @@ static void meta_callback(
                         return;
                 }
 
-		datasource->bps		    = metadata->data.stream_info.bits_per_sample;
-		datasource->channels        = metadata->data.stream_info.channels;
-		datasource->sample_rate     = metadata->data.stream_info.sample_rate;
-		datasource->total_samples   = metadata->data.stream_info.total_samples - skip;
+		datasource->bps		   = metadata->data.stream_info.bits_per_sample;
+		datasource->channels       = metadata->data.stream_info.channels;
+		datasource->sample_rate    = metadata->data.stream_info.sample_rate;
+		datasource->total_samples  = metadata->data.stream_info.total_samples - skip;
 
-		datasource->length_in_msec  = datasource->total_samples * 10 / (datasource->sample_rate / 100);
+		datasource->length_in_msec = datasource->total_samples * 10 / (datasource->sample_rate / 100);
 
 		/* if (!canonicalize_until_specification(
 			datasource->until_specification, datasource->inbasefilename,
@@ -303,6 +296,88 @@ static FLAC__StreamDecoderWriteStatus write_callback(
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
+size_t pack_pcm_signed_big_endian(FLAC__byte *data, FLAC__int32 *input, 
+	unsigned wide_samples, unsigned channels, unsigned source_bps, unsigned target_bps) {
+
+	FLAC__int32 sample;
+	unsigned samples, channel;
+	const unsigned bytes_per_sample = target_bps / 8;
+
+	FLAC__ASSERT(channels > 0 && channels <= FLAC__MAX_SUPPORTED_CHANNELS);
+	FLAC__ASSERT(source_bps < 32);
+	FLAC__ASSERT(target_bps <= 24);
+	FLAC__ASSERT(target_bps <= source_bps);
+	FLAC__ASSERT((source_bps & 7) == 0);
+	FLAC__ASSERT((target_bps & 7) == 0);
+
+	samples = wide_samples;
+
+	while (samples--) {
+
+		sample = *input++;
+
+		switch (target_bps) {
+			case 8:
+				data[0] = sample ^ 0x80;
+				break;
+			case 16:
+				data[0] = (FLAC__byte)(sample >> 8);
+				data[1] = (FLAC__byte)sample;
+				break;
+			case 24:
+				data[0] = (FLAC__byte)(sample >> 16);
+				data[1] = (FLAC__byte)(sample >> 8);
+				data[2] = (FLAC__byte)sample;
+				break;
+		}
+
+		data += bytes_per_sample;
+	}
+
+	return wide_samples * channels * bytes_per_sample;
+}
+
+size_t pack_pcm_signed_little_endian(FLAC__byte *data, FLAC__int32 *input, 
+	unsigned wide_samples, unsigned channels, unsigned source_bps, unsigned target_bps) {
+
+	FLAC__int32 sample;
+	unsigned samples;
+	const unsigned bytes_per_sample = target_bps / 8;
+
+	FLAC__ASSERT(channels > 0 && channels <= FLAC__MAX_SUPPORTED_CHANNELS);
+	FLAC__ASSERT(source_bps < 32);
+	FLAC__ASSERT(target_bps <= 24);
+	FLAC__ASSERT(target_bps <= source_bps);
+	FLAC__ASSERT((source_bps & 7) == 0);
+	FLAC__ASSERT((target_bps & 7) == 0);
+
+	/* the input is already organized into wide samples; all we need to do
+	 * is write the samples at the target bit-width.
+	 */
+	samples = wide_samples;
+
+	while (samples--) {
+
+		sample = *input++;
+
+		switch(target_bps) {
+			case 8:
+				data[0] = sample ^ 0x80;
+				break;
+			case 24:
+				data[2] = (FLAC__byte)(sample >> 16);
+				/* fall through */
+			case 16:
+				data[1] = (FLAC__byte)(sample >> 8);
+				data[0] = (FLAC__byte)sample;
+		}
+
+		data += bytes_per_sample;
+	}
+
+	return wide_samples * channels * bytes_per_sample;
+}
+
 MODULE = Audio::FLAC::Decoder PACKAGE = Audio::FLAC::Decoder
 
 PROTOTYPES: DISABLE
@@ -316,6 +391,7 @@ open(class, path)
 
 	/* for setting the stream length */
 	FLAC__uint64 pos;
+	FLAC__uint32 test = 1;
 
 	/* Create our new self and a ref to it - all of these are cleaned up in DESTROY */
 	HV *self = newHV();
@@ -326,6 +402,8 @@ open(class, path)
 
 	/* holder for the decoder itself */
 	datasource->decoder = FLACdecoder_new();
+
+	is_big_endian_host = (*((FLAC__byte*)(&test)))? false : true;
 
 	/* check and see if a pathname was passed in, otherwise it might be a
 	 * IO::Socket subclass, or even a *FH Glob */
@@ -486,10 +564,20 @@ sysread(obj, buffer, nbytes = 1024)
 		const unsigned n = min(datasource->wide_samples_in_reservoir, SAMPLES_PER_WRITE);
 		const unsigned delta = n * channels;
 		unsigned i;
+		int bytes;
 
-		int bytes = (int)pack_pcm_signed_little_endian(
-			datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
-		);
+		if (is_big_endian_host) {
+
+			bytes = (int)pack_pcm_signed_big_endian(
+				datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
+			);
+
+		} else {
+
+			bytes = (int)pack_pcm_signed_little_endian(
+				datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
+			);
+		}
 
 		for (i = delta; i < datasource->wide_samples_in_reservoir * channels; i++) {
 			datasource->reservoir[i-delta] = datasource->reservoir[i];
@@ -498,7 +586,6 @@ sysread(obj, buffer, nbytes = 1024)
 		datasource->wide_samples_in_reservoir -= n;
 
 		readBuffer        = datasource->sample_buffer;
-
 		total_bytes_read += bytes;
 		readBuffer       += bytes;
 		nbytes           -= bytes;

@@ -1,5 +1,15 @@
 Revision history for Perl extension Audio::FLAC::Decoder.
 
+0.4  Sun Nov 30 19:13:22 PST 2008
+	* More from Mark Glines:
+	  - Fix sample output order. 
+	  - Update documenation.
+	  - Remove unused defines.
+	  - Update tests to check output samples.
+
+	* Do endian check.
+	* Pull in dither.c code to Decoder.xs
+
 0.3  Mon Nov 24 14:33:34 PST 2008
 	* Patch from Mark Glines to update to the latest FLAC version.
 

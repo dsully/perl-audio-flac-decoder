@@ -3,7 +3,7 @@ package Audio::FLAC::Decoder;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.3';
+$VERSION = '0.4';
 
 BOOT_XS: {
         # If I inherit DynaLoader then I inherit AutoLoader
@@ -65,7 +65,8 @@ the object is collected by the garbage handler. Returns C<undef> on failure.
 Reads PCM data from the FLAC stream into C<$buffer>.  Returns the
 number of bytes read, 0 when it reaches the end of the stream, or a
 value less than 0 on error.  The optional size can specify how many bytes to read.
-The data returned is in signed, little endian format.
+The data returned is in signed, little endian format.  You can call the
+methods channels(), bits_per_sample() and sample_rate() to find out the details.
 
 =head2 C<raw_seek ($pos)>
 
@@ -77,16 +78,22 @@ C<$pos> in raw bytes.  Returns 0 on success.
 Seeks through the bitstream to the offset specified by C<$pos> in pcm
 samples. Returns 0 on success.
 
-=head2 C<time_seek ($pos, [$page])>
+=head2 C<time_seek ($pos)>
 
 Seeks through the bitstream to the offset specified by C<$pos> in
 seconds. Returns 0 on success.
 
-=head2 C<bitrate ([$stream])>
+=head2 C<channels ()>
 
-Returns the average bitrate for the specified logical bitstream.  If
-C<$stream> is left out or set to -1, the average bitrate for the entire
-stream will be reported.
+Returns the number of channels in the bit stream.
+
+=head2 C<bits_per_sample ()>
+
+Returns the size of the samples, in bits.
+
+=head2 sample_rate ()>
+
+Returns the bit stream's rate, in samples per second.
 
 =head2 C<time_total ([$stream])>
 
