@@ -170,7 +170,7 @@ static void error_callback(
 
     /* flac_datasource *datasource = (flac_datasource *)client_data; */
 
-    warn("FLAC decoder error_callback: %s\n", status);
+    warn("FLAC decoder error_callback: %d\n", status);
 }
 
 static FLAC__StreamDecoderSeekStatus seek_callback(
