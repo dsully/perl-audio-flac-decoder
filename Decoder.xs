@@ -294,88 +294,6 @@ static FLAC__StreamDecoderWriteStatus write_callback(
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-size_t pack_pcm_signed_big_endian(FLAC__byte *data, FLAC__int32 *input,
-    unsigned wide_samples, unsigned channels, unsigned source_bps, unsigned target_bps) {
-
-    FLAC__int32 sample;
-    unsigned samples, channel;
-    const unsigned bytes_per_sample = target_bps / 8;
-
-    FLAC__ASSERT(channels > 0 && channels <= FLAC__MAX_SUPPORTED_CHANNELS);
-    FLAC__ASSERT(source_bps < 32);
-    FLAC__ASSERT(target_bps <= 24);
-    FLAC__ASSERT(target_bps <= source_bps);
-    FLAC__ASSERT((source_bps & 7) == 0);
-    FLAC__ASSERT((target_bps & 7) == 0);
-
-    samples = wide_samples * channels;
-
-    while (samples--) {
-
-        sample = *input++;
-
-        switch (target_bps) {
-            case 8:
-                data[0] = sample ^ 0x80;
-                break;
-            case 16:
-                data[0] = (FLAC__byte)(sample >> 8);
-                data[1] = (FLAC__byte)sample;
-                break;
-            case 24:
-                data[0] = (FLAC__byte)(sample >> 16);
-                data[1] = (FLAC__byte)(sample >> 8);
-                data[2] = (FLAC__byte)sample;
-                break;
-        }
-
-        data += bytes_per_sample;
-    }
-
-    return wide_samples * channels * bytes_per_sample;
-}
-
-size_t pack_pcm_signed_little_endian(FLAC__byte *data, FLAC__int32 *input,
-    unsigned wide_samples, unsigned channels, unsigned source_bps, unsigned target_bps) {
-
-    FLAC__int32 sample;
-    unsigned samples;
-    const unsigned bytes_per_sample = target_bps / 8;
-
-    FLAC__ASSERT(channels > 0 && channels <= FLAC__MAX_SUPPORTED_CHANNELS);
-    FLAC__ASSERT(source_bps < 32);
-    FLAC__ASSERT(target_bps <= 24);
-    FLAC__ASSERT(target_bps <= source_bps);
-    FLAC__ASSERT((source_bps & 7) == 0);
-    FLAC__ASSERT((target_bps & 7) == 0);
-
-    /* the input is already organized into wide samples; all we need to do
-     * is write the samples at the target bit-width.
-     */
-    samples = wide_samples * channels;
-
-    while (samples--) {
-
-        sample = *input++;
-
-        switch(target_bps) {
-            case 8:
-                data[0] = sample ^ 0x80;
-                break;
-            case 24:
-                data[2] = (FLAC__byte)(sample >> 16);
-                /* fall through */
-            case 16:
-                data[1] = (FLAC__byte)(sample >> 8);
-                data[0] = (FLAC__byte)sample;
-        }
-
-        data += bytes_per_sample;
-    }
-
-    return wide_samples * channels * bytes_per_sample;
-}
-
 MODULE = Audio::FLAC::Decoder PACKAGE = Audio::FLAC::Decoder
 
 PROTOTYPES: DISABLE
@@ -558,18 +476,53 @@ sysread(obj, buffer, nbytes = 1024)
         unsigned i;
         int bytes;
 
+        FLAC__byte *out = datasource->sample_buffer;
+
         if (is_big_endian_host) {
 
-            bytes = (int)pack_pcm_signed_big_endian(
-                datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
-            );
+            for (i = 0; i < channels*n; i++) {
+
+                FLAC__int32 sample = (datasource->reservoir)[i];
+
+                switch (bps) {
+                    case 8:
+                        out[0] = sample ^ 0x80;
+                        break;
+                    case 16:
+                        out[0] = (FLAC__byte)(sample >> 8);
+                        out[1] = (FLAC__byte)sample;
+                        break;
+                    case 24:
+                        out[0] = (FLAC__byte)(sample >> 16);
+                        out[1] = (FLAC__byte)(sample >> 8);
+                        out[2] = (FLAC__byte)sample;
+                        break;
+                }
+            }
 
         } else {
 
-            bytes = (int)pack_pcm_signed_little_endian(
-                datasource->sample_buffer, datasource->reservoir, n, channels, bps, bps
-            );
+            for (i = 0; i < channels*n; i++) {
+
+                FLAC__int32 sample = (datasource->reservoir)[i];
+
+                switch (bps) {
+                    case 8:
+                        out[0] = sample ^ 0x80;
+                        break;
+                    case 24:
+                        out[2] = (FLAC__byte)(sample >> 16);
+                        /* fall through */
+                    case 16:
+                        out[1] = (FLAC__byte)(sample >> 8);
+                        out[0] = (FLAC__byte)sample;
+                }
+
+                out+=bps/8;
+            }
         }
+
+        bytes = (out - datasource->sample_buffer);
 
         for (i = delta; i < datasource->wide_samples_in_reservoir * channels; i++) {
             datasource->reservoir[i-delta] = datasource->reservoir[i];
