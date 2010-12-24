@@ -498,6 +498,8 @@ sysread(obj, buffer, nbytes = 1024)
                         out[2] = (FLAC__byte)sample;
                         break;
                 }
+
+                out += bps / 8;
             }
 
         } else {
@@ -518,7 +520,7 @@ sysread(obj, buffer, nbytes = 1024)
                         out[0] = (FLAC__byte)sample;
                 }
 
-                out+=bps/8;
+                out += bps / 8;
             }
         }
 
